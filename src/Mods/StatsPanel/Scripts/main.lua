@@ -6,7 +6,7 @@
 -- Base values come from class defaults; current values come from the live
 -- objects or the game's own stat getters (F_GetAttackSpeed, F_GetJumpHeight, ...).
 
-local MOD_VERSION = "1.2.0"
+local MOD_VERSION = "1.3.0"
 
 local CONFIG = {
     TOGGLE_KEY = Key.F6,
@@ -83,6 +83,11 @@ local function callOut(obj, fn, outName, ...)
     args[#args + 1] = out
     local ok = pcall(function() obj[fn](obj, table.unpack(args)) end)
     if ok then return out[outName] end
+    return nil
+end
+
+local function perSecond(seconds)
+    if seconds and seconds > 0 then return 1 / seconds end
     return nil
 end
 
@@ -202,6 +207,13 @@ local function readJokers(pc, pawn, ps, item)
                     equipped = o1.isJokerEquiped == true
                     value = num(o2.jokerCumulativeValue)
                 end
+                -- Character cards count for every weapon; the game asks for them as itemHero.
+                if count > 0 and (not value or value == 0) then
+                    local h1, h2 = {}, {}
+                    if pcall(function() lib:F_GetJokerEffects(gi, key, FName("itemHero"), pc, h1, h2) end) then
+                        value = num(h2.jokerCumulativeValue) or value
+                    end
+                end
             end
             if equipped or count > 0 then
                 local row = jokerRow(key, pc)
@@ -222,6 +234,84 @@ local function readJokers(pc, pawn, ps, item)
     if callErr then diag[#diag + 1] = "F_GetJokerEffects error: " .. callErr end
     jokerCache = { t = FFWUi.now(), list = list, healBonus = heal, shieldBonus = shield, diag = diag }
     return jokerCache
+end
+
+---------------------------------------------------------------------------
+-- What a card does to this build
+---------------------------------------------------------------------------
+-- Only cards that are a plain sum or factor in the game's code are worked out.
+-- Conditional and trigger cards have no steady number to show.
+-- Time between shots on these guns is the shared fireRate / attack speed. The
+-- Minigun has its own timer; melee, thrown weapons and the Bow run on animations.
+local TIMED_GUNS = {
+    BP_Item_QuadBarrel_C = true, BP_Item_Shotgun_C = true, BP_Item_Pistol_C = true,
+    BP_Item_Winchester_C = true, BP_Item_LongRanger_C = true, BP_Item_DualRevolver_C = true,
+}
+-- BP_Item.F_GetAttackSpeed adds these to the multiplier.
+local ATTACK_CARDS = {
+    jokerUpgradeFirerate = true, jokerUpgradeFirerateB = true, jokerUpgradeFirerateC = true,
+    jokerPewPewPew = true, jokerBracing = true, jokerFocusedFeet = true,
+}
+-- BP_Item.F_GetReloadSpeed adds these to the multiplier.
+local RELOAD_CARDS = { jokerUpgradeReloadSpeed = true, jokerFastHands = true }
+-- BP_Item.F_InitItemDatas: default max ammo x value, rounded.
+local AMMO_CARDS = { jokerUpgradeTotalAmmoBag = true, jokerUpgradeTotalAmmoBagB = true, jokerUpgradeTotalAmmoBagC = true, jokerSpareBullets = true }
+-- BP_Player.F_UpdateSpeed: walk speed per unit of the card's value.
+local SPEED_CARDS = { jokerUpgradeHeroSpeed = 550, jokerSpeedyGunzales = 1, jokerDisgrace = 165 }
+-- FL_Items.F_ApplyImpactDamages: damage x (1 + value x this).
+local DAMAGE_CARDS = { jokerUpgradeDamage = 1, jokerHeavyWeapon = 0.1 }
+
+local function round(x)
+    return math.floor(x + 0.5)
+end
+
+local function signed(x)
+    local a = math.abs(x)
+    if a >= 10 or math.abs(a - round(a)) < 1e-6 then return string.format("%+d", round(x)) end
+    if a >= 1 then return string.format("%+.1f", x) end
+    return string.format("%+.2f", x)
+end
+
+-- b is what collect() read from the live weapon. Returns { amount, unit } or nil.
+local function cardEffect(j, b)
+    local v = j.value
+    if not v or v == 0 then return nil end
+    if ATTACK_CARDS[j.id] then
+        if not b.attack then return nil end
+        if not b.applies then return { "none", "attack" } end
+        -- Swift Shot only counts while aiming, so show what it gives then.
+        local aimOnly = j.id == "jokerFocusedFeet" and not b.aiming
+        local now = b.attack + (aimOnly and v or 0)
+        if b.fire and b.fire > 0 then
+            local function rate(attack, fire)
+                if b.spin then return attack / (b.spin * fire * 0.75) end
+                return attack / fire
+            end
+            -- The Minigun takes its upgrade off fireRate as well, so it counts twice.
+            local fireWithout = b.fire + ((b.spin and j.id == "jokerUpgradeFirerateB") and v or 0)
+            return { signed(rate(now, b.fire) - rate(now - v, fireWithout)), aimOnly and "aiming /s" or "shots/s" }
+        end
+        return { signed(v), aimOnly and "aiming x" or "attack x" }
+    end
+    if RELOAD_CARDS[j.id] then
+        if not b.reload or b.reload <= 0 then return nil end
+        -- Reload time compared with not having this card.
+        return { string.format("-%.0f%%", v / b.reload * 100), "reload" }
+    end
+    if j.id == "jokerUpgradeClipSize" then
+        if not b.mag then return nil end
+        return { signed(round(b.mag * v)), "rounds" }
+    end
+    if AMMO_CARDS[j.id] then
+        if not b.total or (j.id == "jokerUpgradeTotalAmmoBag" and not b.bag) then return nil end
+        return { signed(round(b.total * v)), "ammo" }
+    end
+    if SPEED_CARDS[j.id] then return { signed(v * SPEED_CARDS[j.id]), "speed" } end
+    if DAMAGE_CARDS[j.id] then return { string.format("x%.2f", 1 + v * DAMAGE_CARDS[j.id]), "damage" } end
+    if j.id == "jokerUpgradeHeal" then return { signed(v), "HP" } end
+    if j.flat then return { signed(v), "" } end
+    if v > 0 and v < 1 then return { string.format("+%g%%", v * 100), "" } end
+    return nil
 end
 
 ---------------------------------------------------------------------------
@@ -278,20 +368,41 @@ local function collect(pc, forceJokers)
     row("Stability", try(function() return pawnCdo.stability end), try(function() return pawn.stability end), "pct", true)
     row("Kill combo", nil, try(function() return ps.enemyKillCombo end), "diff", true)
 
+    local build = {}
     if item then
         local itemCdo = cdo(item)
         local raw = str(try(function() return item.ItemName end)) or "?"
         local pretty = raw:gsub("^item", ""):gsub("(%l)(%u)", "%1 %2")
         header("WEAPON  " .. pretty, "WEAPON")
-        -- The Minigun spins up on its own fire rate instead of the shared attack-speed getter.
-        local minigunBase = num(try(function() return itemCdo.minigunFirerate end))
-        if minigunBase then
-            row("Fire rate", minigunBase, try(function() return item:F_GetMinigunFireRate() end))
-        else
-            local baseRate = try(function() return itemCdo.fireRate end)
-            row("Attack speed", baseRate, num(baseRate) and callOut(item, "F_GetAttackSpeed", "AttackSpeed", baseRate))
+        -- Attack speed is the game's own multiplier: its weapons ask for it with a base of 1.
+        build.attack = num(callOut(item, "F_GetAttackSpeed", "AttackSpeed", 1.0))
+        -- A weapon with this off ignores every attack speed bonus.
+        build.applies = try(function() return item.canBeAffectedByPlayerFireRate end) ~= false
+        build.aiming = try(function() return item.isAiming end) == true
+        row("Attack speed x", 1.0, build.attack)
+        -- The Minigun's getter returns the seconds until its next shot, spin x (fireRate / attack
+        -- speed) x 0.75. The spin (minigunFirerate) falls as the barrels speed up, so that number
+        -- goes down while the gun gets faster: show shots per second instead. BASE is the same
+        -- spin without Jokers, so the % is what the Jokers add at any moment. The game times
+        -- shots with a Delay, so at low frame rates the real rate can be a little below this.
+        local spin = num(try(function() return item.minigunFirerate end))
+        local fire = num(try(function() return item.fireRate end))
+        local defaultRate = num(try(function() return itemCdo.fireRate end))
+        local class = str(try(function() return item:GetClass():GetFName() end))
+        if spin then
+            build.spin, build.fire = spin, fire
+            row("Shots per second", perSecond(defaultRate and spin * defaultRate * 0.75),
+                perSecond(num(try(function() return item:F_GetMinigunFireRate() end))))
+        elseif TIMED_GUNS[class] and fire and fire > 0 then
+            -- The cooldown between shots; time spent reloading is not counted.
+            build.fire = fire
+            row("Shots per second", perSecond(defaultRate), build.attack and build.attack / fire)
         end
-        row("Reload speed", nil, callOut(item, "F_GetReloadSpeed", "ReloadSpeed"))
+        build.reload = num(callOut(item, "F_GetReloadSpeed", "ReloadSpeed"))
+        build.mag = num(try(function() return itemCdo.defaultItemDatas[ITEM.mag] end))
+        build.total = num(try(function() return itemCdo.defaultItemDatas[ITEM.total] end))
+        build.bag = try(function() return item.affectedByPlayerAmmoBagUpgrades end) ~= false
+        row("Reload speed", nil, build.reload)
         local swap = {}
         pcall(function() item:F_GetWeaponSwapSpeed(1.0, 1.0, swap, swap) end)
         row("Swap speed x", 1.0, swap.Speed)
@@ -307,6 +418,7 @@ local function collect(pc, forceJokers)
 
     header("JOKERS  (" .. #jokerCache.list .. ")", "JOKERS")
     for _, j in ipairs(jokerCache.list) do
+        j.effect = try(cardEffect, j, build)
         rows[#rows + 1] = { joker = j }
     end
     return rows
@@ -333,11 +445,6 @@ local function change(r)
     if math.abs(r.base) < 1e-9 then return (d > 0 and "+" or "") .. fmtNum(d), color end
     local pct = d / math.abs(r.base) * 100
     return string.format("%+.0f%%", pct), color
-end
-
-local function jokerValue(j)
-    if not j.value then return "" end
-    return "+" .. fmtNum(j.value) .. (j.flat and "" or "%")
 end
 
 ---------------------------------------------------------------------------
@@ -447,9 +554,10 @@ local function render(ui, rows)
                 FFWUi.setTextColor(w.label, C.text)
                 FFWUi.setText(w.label, j.name .. ((j.count > 1) and ("  x" .. j.count) or ""))
                 FFWUi.setText(w.base, "")
-                FFWUi.setText(w.now, "")
+                FFWUi.setTextColor(w.now, C.dim)
+                FFWUi.setText(w.now, j.effect and j.effect[2] or "")
                 FFWUi.setTextColor(w.change, C.soul)
-                FFWUi.setText(w.change, jokerValue(j))
+                FFWUi.setText(w.change, j.effect and j.effect[1] or "")
             else
                 FFWUi.setTextColor(w.label, C.text)
                 FFWUi.setText(w.label, r.label)
@@ -500,11 +608,12 @@ local function sampleRows()
         stat("Dash cooldown (s)", 1, 0.85, "pct"),
         stat("Recoil", 1, 0.8, "pct", true),
         { header = "WEAPON  Minigun", key = "section:WEAPON" },
-        stat("Fire rate", 12, 15.5, "pct"),
+        stat("Attack speed x", 1, 1.1, "pct"),
+        stat("Shots per second", 13.3, 16.3, "pct"),
         stat("Max ammo", 300, 585, "diff"),
         { header = "JOKERS  (2)", key = "section:JOKERS" },
-        { joker = { name = "Quick Hands", count = 2, value = 20, flat = false } },
-        { joker = { name = "Extra Lead", count = 1, value = 285, flat = true } },
+        { joker = { name = "Quick Hands", count = 2, effect = { "-15%", "reload" } } },
+        { joker = { name = "Extra Lead", count = 1, effect = { "+285", "ammo" } } },
     }
 end
 
@@ -543,6 +652,7 @@ local function dump()
             log("[" .. r.header .. "]")
         elseif r.joker then
             local j = r.joker
+            if j.effect then log(string.format("  effect of %s: %s %s", j.id, j.effect[1], j.effect[2])) end
             log(string.format("  joker %s (%s) count=%d value=%s flat=%s", j.name, j.id, j.count, tostring(j.value), tostring(j.flat)))
         else
             log(string.format("  %-20s base=%s now=%s", r.label, tostring(r.base), tostring(r.now)))
@@ -555,6 +665,13 @@ local function dump()
         log("  F_GetDamageReduction()=" .. tostring(try(function() return ps:F_GetDamageReduction() end)))
         log("  playerHeal=" .. tostring(try(function() return ps.playerHeal end)))
         local item = try(function() return pc.Pawn.AC_PlayerItems.equipedItem end)
+        if valid(item) then
+            log(string.format("  attack speed applies=%s fireRate=%s default=%s class=%s",
+                tostring(try(function() return item.canBeAffectedByPlayerFireRate end)),
+                tostring(try(function() return item.fireRate end)),
+                tostring(try(function() return cdo(item).fireRate end)),
+                str(try(function() return item:GetClass():GetFName() end))))
+        end
         local mg = valid(item) and num(try(function() return item.minigunFirerate end))
         if mg then
             log(string.format("  minigun: minigunFirerate=%s default=%s F_GetMinigunFireRate()=%s speedAlpha=%s",
