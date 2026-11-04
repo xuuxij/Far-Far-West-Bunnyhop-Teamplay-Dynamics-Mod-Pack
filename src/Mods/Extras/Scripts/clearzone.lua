@@ -17,7 +17,7 @@ local CLASSES = {
     "/Game/Gamework/ObjectivePing/BP_ObjectivePing.BP_ObjectivePing_C", -- objective markers
     "/Game/Interfaces/Pings/BP_ObjectPing.BP_ObjectPing_C",             -- pings on things
     "/Game/Player/Pings/BP_Ping.BP_Ping_C",                             -- pings on places
-    "/Game/Lobby/BP_WorldIcon.BP_WorldIcon_C",                          -- world icons
+    "/Game/Levels/Assets/Lobby/BP_WorldIcon.BP_WorldIcon_C",            -- world icons
     "/Game/Player/BP_PlayerNameWidget.BP_PlayerNameWidget_C",           -- name tags
     "/Game/Characters/BP_NPC.BP_NPC_C",                                 -- NPC labels
     "/Game/GPE/BP_Pickable_Joker.BP_Pickable_Joker_C",                  -- joker cards lying about

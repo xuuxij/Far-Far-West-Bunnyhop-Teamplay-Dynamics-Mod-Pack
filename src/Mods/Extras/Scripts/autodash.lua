@@ -11,7 +11,7 @@
 local M = {}
 
 local DASH_ACTION = "IA_Dash"
-local DASH_HANDLER = "InpActEvt_IA_Dash_K2Node_EnhancedInputActionEvent_8"
+local DASH_HANDLER = "InpActEvt_IA_Dash_K2Node_EnhancedInputActionEvent_10"
 local WAIT_EXTRA_S = 0.3  -- remember a landing for the dash cooldown plus this
 local RETRY_S = 0.05
 local KEYS_EVERY_S = 5    -- re-read the key binding this often, for rebinds

@@ -35,7 +35,7 @@ Newest pack: https://github.com/xuuxij/Sveney-Super-Friends-Together-Time-5000/r
 4. Double-click `Verify.bat`. It must say OK and show the same fingerprint as everyone else in the lobby.
 
 Later: `Update.bat` checks this page for a newer pack and installs it. `Uninstall.bat` removes the pack and puts back whatever the install moved aside.
-The host ticks "Allow mods" when creating the room. Made for Far Far West 0.2.0.20 - CL 915; after a game update, wait for a new pack.
+The host ticks "Allow mods" when creating the room. Made for Far Far West 0.3.0.10 - CL 2979; after a game update, wait for a new pack.
 
 ## What is in the repo
 
@@ -43,7 +43,7 @@ The host ticks "Allow mods" when creating the room. Made for Far Far West 0.2.0.
 - `src/Mods/StatsPanel` – base vs current stats, weapon stats, active Jokers (F6, Ctrl+F6 dumps raw values to UE4SS.log)
 - `src/Mods/Extras` – More Players panel (reads the MorePlayers mod's shared variables), speedometer, auto dash, muzzle flash switch, kill-streak call-outs, clear zone at the crosshair, teammate arrows, teammate-hit warning (glow, hit marker colour, sound), minigun spin sound volume, and the OPTIONS list in F9 edit mode (Ctrl+F5 dumps every part's state to UE4SS.log); one file per part
 - `src/Mods/MorePlayers` – lobbies of up to 8: lobby cap on the host, player-count scaling continued past 4 (one hook on `F_GetCurveByNumberOfPlayers`), gold magnet table fix, name colours for players 5..8, status for the panel; `settings.txt` next to Scripts
-- `tools/morepak/` – builds `ZZZ_SveneySuperFriendsTogetherTime5000_P` (13 vanilla Blueprints with 16 byte patches: player-count Selects fall back to the 4-player value, 8 lobby rows) from the installed game with retoc; `patches.json` is the spec, `kismet.py` the bytecode disassembler used to derive and re-derive it
+- `tools/morepak/` – builds `ZZZ_SveneySuperFriendsTogetherTime5000_P` (14 vanilla Blueprints with 18 byte patches: player-count Selects fall back to the 4-player value, 8 lobby rows) from the installed game with retoc; `patches.json` is the spec, `kismet.py` the bytecode disassembler used to derive and re-derive it, `uasset_json.py` the header reader that gives `kismet.py` its JSON (no UAssetGUI needed)
 - `src/Mods/shared/FFWUi` – shared UMG-in-code helpers (panels, tick boxes, a draggable slider, saved layout and settings); `asset()` must not be called from inside a `RegisterHook` callback, loading there freezes the game
 - `config/` – pack definition (name, title, version, game build lock, UE4SS asset + hash, pak name, update repository), UE4SS settings, AOB signatures
 - `installer/` – Install/Verify/Update/Uninstall scripts shipped inside the zip
@@ -56,5 +56,6 @@ hash-checked by the build) and `vendor/retoc/<retocAsset from config/pack.json>`
 The pak is built from the game's own files on every pack build; nothing third-party ships in the pack any more.
 
 After a game patch: check the exe hash in `config/pack.json`, re-test the signatures and hooks, re-derive
-`tools/morepak/patches.json` (the build stops on any vanilla hash or byte mismatch; `kismet.py <json> <uexp> --at 0x..`
-shows the bytecode around an offset), bump the version, rebuild.
+`tools/morepak/patches.json` (the build stops on any vanilla hash or byte mismatch; `build_morepak.py --keep` leaves the
+legacy assets in `dist/_morepak_work`, then `uasset_json.py <uasset> <json>` and `kismet.py <json> <uexp> --at 0x..`
+show the bytecode around an offset), bump the version, rebuild.

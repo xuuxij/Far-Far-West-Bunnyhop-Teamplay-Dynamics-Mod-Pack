@@ -469,8 +469,19 @@ function M.setCheck(cb, on)
     M.setShown(cb.mark, on)
 end
 
+local startMenuWatch -- below: panels go behind the game's menus while one is open
+local panels = setmetatable({}, { __mode = "k" }) -- every panel shown, so they can be restacked
+local behindMenu = false
+local BEHIND_Z = -1000 -- under every widget of the game, keeping our own order
+
+local function zFor(p)
+    return behindMenu and (BEHIND_Z + p.zOrder) or p.zOrder
+end
+
 function Panel:show()
-    self.root:AddToViewport(self.zOrder)
+    panels[self] = true
+    self.root:AddToViewport(zFor(self))
+    startMenuWatch()
 end
 
 -- A panel dies with its map: the viewport drops it and GC frees every widget.
@@ -481,6 +492,7 @@ function Panel:valid()
 end
 
 function Panel:destroy()
+    panels[self] = nil
     if self:valid() then pcall(function() self.root:RemoveFromParent() end) end
 end
 
@@ -912,6 +924,46 @@ local function onClick(button)
     end
 end
 
+-- Which of the game's menus are open: { pause menu, map, special menu }, or nil.
+-- Move mode leaves when one of them opens, so only a change counts: a flag
+-- already up when move mode starts is not news.
+local function gameMenus()
+    local mgr = M.menuManager()
+    if not mgr then return nil end
+    return try(function() return { mgr.isMenuOpened == true, mgr.isMapOpen == true, mgr.isAnySpecialMenuOpened == true } end)
+end
+
+-- While one of the game's menus is open (Esc, the map, the equipment screen)
+-- every panel sits under the game's own widgets, so the menu's blur and dark
+-- strips cover it like the rest of the game. Re-adding a widget to the
+-- viewport is the way to change its place in the stack.
+local menuWatch = nil
+
+local function restack(want)
+    behindMenu = want
+    for p in pairs(panels) do
+        if p:valid() then
+            pcall(function()
+                p.root:RemoveFromParent()
+                p.root:AddToViewport(zFor(p))
+            end)
+        else
+            panels[p] = nil
+        end
+    end
+end
+
+function startMenuWatch()
+    if menuWatch then return end
+    menuWatch = LoopInGameThreadWithDelay(100, function()
+        pcall(function()
+            local f = gameMenus()
+            local open = f ~= nil and (f[1] or f[2] or f[3])
+            if open ~= behindMenu then restack(open) end
+        end)
+    end)
+end
+
 local function layoutTick()
     local pc = M.localController()
     if not pc or (layout.pcAddr and pc:GetAddress() ~= layout.pcAddr) then
@@ -919,6 +971,20 @@ local function layoutTick()
         M.setLayout(false)
         return
     end
+    -- A game menu came up (Esc, the map, the equipment screen): leave move mode
+    -- at once and let that menu keep the mouse; it gives input back when it closes.
+    local menus = gameMenus()
+    if menus and layout.menus then
+        for i, open in ipairs(menus) do
+            if open and not layout.menus[i] then
+                layout.inputBy = nil
+                sharedSet("FFWUi.layoutOff", M.now())
+                M.setLayout(false)
+                return
+            end
+        end
+    end
+    layout.menus = menus
     -- The game took input back (e.g. Esc opened and closed its menu): leave move mode.
     if layout.inputBy == "game" and M.now() - layout.since > 1 then
         local mgr = M.menuManager()
@@ -1022,7 +1088,8 @@ end
 local function giveInputBack(pc, how)
     if how == "game" then
         local mgr = M.menuManager()
-        local ok, err = pcall(function() mgr:F_SetInput_Game() end)
+        -- 0.4: seconds before the game accepts "interact" again, what its own menus pass.
+        local ok, err = pcall(function() mgr:F_SetInput_Game(0.4) end)
         if ok then return end
         log("game input restore failed, using fallback: " .. tostring(err))
     end
@@ -1035,7 +1102,7 @@ function M.setLayout(on, quiet)
     if on then
         layout.on = true
         sharedSet("FFWUi.grab", "")
-        layout.inputBy, layout.pcAddr, layout.since = nil, nil, M.now()
+        layout.inputBy, layout.pcAddr, layout.since, layout.menus = nil, nil, M.now(), nil
         local pc = M.localController()
         -- Only take over input in gameplay; at the title screen the mouse is already free.
         if pc and M.inGame(pc) then

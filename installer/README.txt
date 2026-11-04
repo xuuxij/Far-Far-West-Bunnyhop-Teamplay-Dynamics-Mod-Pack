@@ -72,8 +72,8 @@ WHAT'S IN IT
         cooldown, XP multiplier)
       * right-click a panel to hide/show it, middle-click to put it back
         where and how big it started
-    F9 again when done. Your character can't act in edit mode, so do it in
-    the saloon. Your layout and switches are remembered and are your own
+    F9 again when done; opening a game menu (Esc, the map) closes it too.
+    Your character can't act in edit mode, so do it in the saloon. Your layout and switches are remembered and are your own
     choice: they do not affect the pack check below.
   - UE4SS v3.0.1-1109 (the script loader the mods run on) and one small
     game-file patch pak ({PAK}) with the objective fixes.

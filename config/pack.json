@@ -1,11 +1,11 @@
 {
   "name": "SveneySuperFriendsTogetherTime5000",
   "title": "Sveney Super Friends Together Time 5000",
-  "version": "1.9.0",
+  "version": "1.9.2",
   "game": {
-    "productVersion": "0.2.0.20 - CL 915",
+    "productVersion": "0.3.0.10 - CL 2979",
     "exeRelativePath": "FarFarWest/Binaries/Win64/FarFarWest-Win64-Shipping.exe",
-    "exeSha256": "8513353F0FCF02AD43233CF7E9440EEBE8F05785F9F7A79C0BC7EC35713070D5"
+    "exeSha256": "07C476D198ED2D40BABB675E3FAEF68E9B2F3F6E7B8E125F2418A95E5262474A"
   },
   "ue4ss": {
     "repository": "UE4SS-RE/RE-UE4SS",
@@ -27,9 +27,9 @@
   "morepak": {
     "name": "ZZZ_SveneySuperFriendsTogetherTime5000_P",
     "engineVersion": "UE5_7",
-    "retocRepository": "trumank/retoc",
-    "retocAsset": "retoc_cli-x86_64-pc-windows-msvc.zip",
-    "retocSha256": "cc036b06ad3bdcf7003690b00d82719980c374e48a95bf0654f9959148d263aa"
+    "retocRepository": "trumank/retoc (v0.1.5 + vendor/retoc/retoc-shader-hash8.patch)",
+    "retocAsset": "retoc_cli-v0.1.5-ffw1-x86_64-pc-windows-msvc.zip",
+    "retocSha256": "4644cd243a72e4d9535c0fa82e2a5f99fa249513eb5472d3935a5642c3186467"
   },
   "updates": {
     "repository": "xuuxij/Sveney-Super-Friends-Together-Time-5000"

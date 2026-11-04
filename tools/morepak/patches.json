@@ -9,25 +9,25 @@
     "The other one widens the lobby's player list from 4 to 8 rows. Everything else (lobby cap, enemy",
     "scaling, gold magnet, colours) is done at runtime by the MorePlayers Lua mod."
   ],
-  "game": "0.2.0.20 - CL 915",
+  "game": "0.3.0.10 - CL 2979",
   "assets": [
     {
       "path": "FarFarWest/Content/Enemies/Structures/BP_Structre_Cryptic_Sigil",
-      "uexpSha256": "46bba226ece03429c5ed7bccce9db9ffead1357b393dc89e43518a673b7bebef",
-      "uassetSha256": "0b64c1b063cb578d5b8348cb74ce704058ecb1ec3dd8fad5e13406b5875efb14",
+      "uexpSha256": "bc0b6159ca5bfe42f94e6ee8ba29e58b053206204fa8dd2cb7ab041618dc8d8f",
+      "uassetSha256": "b89c67b60e5860412b2373e76f16017db0798b0c20a5c50b0e1fa79c98236279",
       "patches": [
         {
-          "offset": "0x3089",
-          "expect": "0201000000",
-          "set": "4b01000002",
+          "offset": "0x2CD6",
+          "expect": "0c01000000",
+          "set": "5501000002",
           "note": "ubergraph: Select default K2Node_Select_Default -> Temp_int_Variable_1 (4-player value)"
         }
       ]
     },
     {
       "path": "FarFarWest/Content/Interfaces/MainMenu/UI_Menu_Container_CurrentSession",
-      "uexpSha256": "8cc8557791538bc4d9526ec6c4879a968c862e11bfa24a7849a5f32e78a71ce4",
-      "uassetSha256": "5d2adc7091f4c779cc74d5951c4b8675a51054ef5d609d19ba4843e2e12c1f02",
+      "uexpSha256": "820d1d9e48f4d98d042a2d93710c44ca2b2c980fde5be8a33113ce781f4c6868",
+      "uassetSha256": "e63726435d926cc3b2d6b20db1a172479bc22276fe5f3f1f636085b2e81d2a59",
       "patches": [
         {
           "offset": "0xBA9",
@@ -39,11 +39,11 @@
     },
     {
       "path": "FarFarWest/Content/Items/BP_Item_Downloader",
-      "uexpSha256": "a1f3d56e53342773fa64019acef39df8822bd62c1ac84424385adf02b797e863",
-      "uassetSha256": "b430de0dbf78c7b4eb07bdc3ee904c5c1928d689d6447e178aec81fed4dad2ab",
+      "uexpSha256": "4bbeaa602659b692a2631153a3908c31691035bebb2205d53ff57e89d2369046",
+      "uassetSha256": "d8168609f1bbc54c09db9fecbaa1f0474632452afb58e8b60a4c6c84456572ee",
       "patches": [
         {
-          "offset": "0x1AAE",
+          "offset": "0x1AAC",
           "expect": "65",
           "set": "9e",
           "note": "ubergraph: Select default -> Temp_real_Variable (4-player value)"
@@ -52,92 +52,79 @@
     },
     {
       "path": "FarFarWest/Content/Levels/Assets/Woodlands/BP_Woodlands_ShroomStone",
-      "uexpSha256": "ec83c10142f37c0dab4f8ba6cbf6d43f987e4896204275709632bc2b9354f0d3",
-      "uassetSha256": "2683ae8b0a00664b58ae8695beefae5f3ea15fd8dfcdec32f3e6879fef227bc6",
+      "uexpSha256": "26e77dc45c197166e87a8be0712486b18ec941d5cbb0b734fb32a27c646dfe52",
+      "uassetSha256": "805e62bc1bab8b5053d8aab4f1a617c729721fa94389b588dbed950ace309fcc",
       "patches": [
         {
-          "offset": "0x1BC1",
-          "expect": "f000000000",
-          "set": "2f01000005",
+          "offset": "0x1C1B",
+          "expect": "f600000000",
+          "set": "3501000005",
           "note": "ubergraph: Select default -> Temp_real_Variable_4"
         },
         {
-          "offset": "0x1CCA",
-          "expect": "f000000000",
-          "set": "2f01000005",
+          "offset": "0x1D24",
+          "expect": "f600000000",
+          "set": "3501000005",
           "note": "ubergraph: second Select default -> Temp_real_Variable_4"
         }
       ]
     },
     {
-      "path": "FarFarWest/Content/Modifiers/BP_Modifier_Halloween",
-      "uexpSha256": "f236fbfd0ce6874b061dadc1f1f6ecc725c16ec12f3b1db330ba8903344d0e1a",
-      "uassetSha256": "4d1ebca8c3c0b58b1a2f17a26dadbf7649b5596a550e088021b15dda3e0f9ad6",
+      "path": "FarFarWest/Content/Modifiers/BP_Modifier_FallingFire",
+      "uexpSha256": "1c8ddb92c78d89772d2090e989f9f1153123845603cf484219c7c88d2a3ba0bd",
+      "uassetSha256": "4f2a96b297c53dddf144fd69f675568d448b072c97a1e6059516fb547b619ce9",
       "patches": [
         {
-          "offset": "0x125F",
-          "expect": "4000000000",
-          "set": "5400000003",
-          "note": "ubergraph: Select default -> Temp_real_Variable_2"
-        }
-      ]
-    },
-    {
-      "path": "FarFarWest/Content/Modifiers/BP_Modifier_HellFire",
-      "uexpSha256": "3d42432ac4cf0950a43e3c9d2cb335fdc5f46fd8c76efc70ddc69e8349f04f78",
-      "uassetSha256": "4c7e1f38f2924e5a5cc5dd7b23faa69db2874908e278da1c1dfe6c48cde1363d",
-      "patches": [
-        {
-          "offset": "0xB5C",
-          "expect": "3200000000",
+          "offset": "0xA77",
+          "expect": "3300000000",
           "set": "4100000005",
-          "note": "ubergraph: Select default -> Temp_real_Variable_4"
+          "note": "ubergraph: fire spawn delay Select default -> Temp_real_Variable_4 (4-player value)"
         }
       ]
     },
     {
       "path": "FarFarWest/Content/Objectives/Assets/Batteries/BP_KwartPillarButton",
-      "uexpSha256": "b2df1d71e5abc2a2b0daad0b453419e59751eefff76af8f8b4b95e12f38670ab",
-      "uassetSha256": "4558f421bd1c89b105325558854c6a93e413fb9560c560bb6981202286230d96",
+      "uexpSha256": "9f592336c9ecc2b22d64df97eaaa0df3c7b50e617d15a0a778d922cb6a2fedb6",
+      "uassetSha256": "06adf4679292b535958c10a40baabff04cd7244a71ba2989339d13cdfe45fc25",
       "patches": [
         {
-          "offset": "0x3ED2",
-          "expect": "c900000000",
-          "set": "0901000002",
+          "offset": "0x3F2C",
+          "expect": "cf00000000",
+          "set": "0f01000002",
           "note": "F_AssignWrongs: Select default -> Temp_int_Variable_1"
         }
       ]
     },
     {
       "path": "FarFarWest/Content/Objectives/Assets/DrillingMachine/BP_Gauge_DrillMachine",
-      "uexpSha256": "d427cb9bc1b67f5dd4c59268454bfa75895b4488cb4c266af9ab2d8df2693eeb",
-      "uassetSha256": "14bbfba87e9e4e168b4beafcd77c8ab790cedbf369016c685645ed96315cf85d",
+      "uexpSha256": "f1b654bdb1149c6ed081ccad6f2314af4c5b9bb74abf3837c71e9dba5d07f8ee",
+      "uassetSha256": "83f74259e0019a79dd5ec5b43e23108ef0031890ff2493378f50f8c2ce1e80f4",
       "patches": [
         {
-          "offset": "0x5263",
-          "expect": "e900",
-          "set": "3501",
+          "offset": "0x53F5",
+          "expect": "ef00",
+          "set": "3b01",
           "note": "F_GetValueOverTimeBaseOnPlayerCount: Select default -> Temp_real_Variable"
         }
       ]
     },
     {
       "path": "FarFarWest/Content/Objectives/Assets/LaserCanon/BP_LaserCanon_Manager",
-      "uexpSha256": "8dbdc7522dd643c505befdf2c3c7f1bb0c6323275c62db393056ef73c3d5f8f4",
-      "uassetSha256": "22689ae547f398eeb29734397658ee1283a8963e5789f22cdfd4308885dd5db7",
+      "uexpSha256": "70e749119b4729292af68fa365d37262cbda9c11de708172405ab5ffc30e6e63",
+      "uassetSha256": "4da7970d55a59d06c4a63f2c3ba2a4da9adacae44edd26b1cd75c003dbc49182",
       "patches": [
         {
-          "offset": "0x4BA5",
-          "expect": "ca00000000",
-          "set": "f800000006",
+          "offset": "0x4D42",
+          "expect": "d000000000",
+          "set": "fe00000006",
           "note": "F_OpenRandomVent: Select default -> Temp_int_Variable_5"
         }
       ]
     },
     {
       "path": "FarFarWest/Content/Objectives/Assets/Shredder/BP_KwartShredder",
-      "uexpSha256": "3fe836f517f7e6fd77f59ce9fc44f838de0d58d10de902e1784872ad7d47e7c3",
-      "uassetSha256": "c6c2a508ac49fe23edfafa9c79247c16a428819eabf4025f82536fec3f92c9fb",
+      "uexpSha256": "f794f4411bfbb821528150c70f2f9c064eb1ed7c0e8589f276b34079a76bc41d",
+      "uassetSha256": "d723050a9b66eb12c79da37bbef0d927a590a5023e4fa6cc741902a1abe2b3a4",
       "patches": [
         {
           "offset": "0x14CC",
@@ -149,52 +136,84 @@
     },
     {
       "path": "FarFarWest/Content/Objectives/Assets/TntMissile/BP_TntMissileLauncher",
-      "uexpSha256": "d6a3693979f206b747bd5b97ef4a755324b60356556c81b389bf41cddaed88de",
-      "uassetSha256": "3dcfdbc02744e2a91b0cca2ee3d8a6b62cd3ad9589d7e790be0f41d3383635af",
+      "uexpSha256": "d9a3e71a7fcc3702ae427db03ce1b2d2196e15d5988749893f7c01fdd81f9f1d",
+      "uassetSha256": "507a726f9c440f4b4709060ef143f1f04b3b50a71b6d3e713ba1e5c282339d68",
       "patches": [
         {
-          "offset": "0x3C76",
-          "expect": "6901000002",
-          "set": "d501000000",
-          "note": "ubergraph: requiredTnt Select default -> Temp_int_Variable (4-player value)"
+          "offset": "0x3CFF",
+          "expect": "7101000002",
+          "set": "dc0100000c",
+          "note": "ubergraph: requiredTnt Select default -> Temp_int_Variable_11 (last case, 4-player value)"
         },
         {
-          "offset": "0x3EEA",
-          "expect": "6901000000",
-          "set": "d501000007",
-          "note": "ubergraph: timeRequiredToEnableAllLevers Select default -> Temp_int_Variable_6 (4-player value)"
+          "offset": "0x3F73",
+          "expect": "7101000000",
+          "set": "dc01000006",
+          "note": "ubergraph: timeRequiredToEnableAllLevers Select default -> Temp_int_Variable_5 (last case, 4-player value)"
         }
       ]
     },
     {
       "path": "FarFarWest/Content/Objectives/Assets/Totem/BP_CrypticTotem",
-      "uexpSha256": "aa05186b30481b8e19191cc55c18d94584481783c0a770b1abdd62ebb2d84084",
-      "uassetSha256": "db59186d9b7cb6a84a7dd1d58b6f3682ea2b3c7c8e74a340452c7a47c4d3e6cd",
+      "uexpSha256": "365b27471e6380a76ff2f3b536f72c291a0ff18b527de7ae6a2e3b9ab500d853",
+      "uassetSha256": "2393aaf73460c46fb6d285c0a4c2aa5d9bb0d3cce2ff0003b5d1063dcb17ecd6",
       "patches": [
         {
-          "offset": "0x2C19",
-          "expect": "1901000002",
-          "set": "6701000006",
+          "offset": "0x3061",
+          "expect": "2101000002",
+          "set": "6f01000006",
           "note": "ubergraph: required-enemies Select default -> Temp_int_Variable_5 (4-player value)"
         }
       ]
     },
     {
-      "path": "FarFarWest/Content/Quests/Assets/BP_DrSparkTwist_MarauderSpawner",
-      "uexpSha256": "967c48bb654e9c7fc8af519c2dd5b077c14f9bf75d5a23801ac2826cf6bdce33",
-      "uassetSha256": "994751b6ed6a1a6ec107ebe7412e83b5664ebfeb50de739807b56b5bc220803d",
+      "path": "FarFarWest/Content/Objectives/Assets/WaterPipeline/BP_WaterConverter",
+      "uexpSha256": "cebb0ff2f3b57c4c4818bf3b8f1d93b82612dc06c9b12b3e0359962a147719bf",
+      "uassetSha256": "e57e2d74a0fead12bbc61c2e6162d6e2f5c2d53fa2444741168e02f3e13e92c8",
       "patches": [
         {
-          "offset": "0x5590",
-          "expect": "d900000000",
-          "set": "0801000002",
+          "offset": "0x1AD8",
+          "expect": "b300000000",
+          "set": "de00000000",
+          "note": "ubergraph: required balls Select default -> Temp_real_Variable (4-player value)"
+        },
+        {
+          "offset": "0x4939",
+          "expect": "b300000000",
+          "set": "de00000000",
+          "note": "OnRep_addedBalls: load bar Select default -> Temp_real_Variable (4-player value)"
+        }
+      ]
+    },
+    {
+      "path": "FarFarWest/Content/Quests/Assets/BP_DrSparkTwist_MarauderSpawner",
+      "uexpSha256": "b7babf89f28f80039490ea19dda49ba843c46c1170715dda34383c8acaf288b7",
+      "uassetSha256": "b13f49dbd35527ab77ca40be44fef5f15e13875845abb4359f0b9c63e91eebfa",
+      "patches": [
+        {
+          "offset": "0x5722",
+          "expect": "df00000000",
+          "set": "0e01000002",
           "note": "F_SpawnMarauders: Select default -> Temp_int_Variable_1"
         },
         {
-          "offset": "0x58FB",
-          "expect": "d900000000",
-          "set": "0801000002",
+          "offset": "0x5A8D",
+          "expect": "df00000000",
+          "set": "0e01000002",
           "note": "F_SpawnMarauders: second Select default -> Temp_int_Variable_1"
+        }
+      ]
+    },
+    {
+      "path": "FarFarWest/Content/Quests/BP_Quest_LadyGranny_C",
+      "uexpSha256": "6a153c9fdee02df821a5f4a985d6eef5f549f8e7dc3121aa82b21882f47fe958",
+      "uassetSha256": "327e9c45cf9ca235d68279569a8840cbfa66eaffe86396dd3bbd38d1534588cf",
+      "patches": [
+        {
+          "offset": "0x4758",
+          "expect": "6500000000",
+          "set": "8600000002",
+          "note": "F_GetAmountRequiredTeas: Select default -> Temp_int_Variable_1 (4-player value)"
         }
       ]
     }

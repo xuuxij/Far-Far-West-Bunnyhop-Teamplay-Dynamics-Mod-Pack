@@ -77,7 +77,7 @@ def main():
     for asset in spec['assets']:
         rel = asset['path']
         base = rel.rsplit('/', 1)[1]
-        run([retoc, 'to-legacy', '--no-shaders', '-f', rel + '.uasset', paks, legacy])
+        run([retoc, 'to-legacy', '--no-shaders', '--version', mp['engineVersion'], '-f', rel + '.uasset', paks, legacy])  # same version as to-zen below: the default (UE5_6) legacy header does not convert back
         src_uasset = os.path.join(legacy, rel.replace('/', os.sep) + '.uasset')
         src_uexp = os.path.join(legacy, rel.replace('/', os.sep) + '.uexp')
         if not os.path.exists(src_uexp):

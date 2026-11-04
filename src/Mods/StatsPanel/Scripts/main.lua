@@ -129,6 +129,48 @@ local function weaponJokers(gi, itemName, counts, diag)
     end
 end
 
+-- The joker rows. Since game 0.3 the game instance no longer carries a copy of
+-- the table: the row names come from the data table and each row from the
+-- game's own getter.
+local JOKER_TABLE = "/Game/Progress/DT_PlayerJokers.DT_PlayerJokers"
+local TABLE_LIB = "/Script/Engine.Default__DataTableFunctionLibrary"
+local PLAYER_DATAS = "/Game/Gamework/BPFL_PlayerDatas.Default__BPFL_PlayerDatas_C"
+local jokerIds = nil
+
+local function unwrap(v)
+    return try(function() return v:get() end) or v
+end
+
+local function jokerRowNames(diag)
+    if jokerIds then return jokerIds end
+    local dt, tableLib = StaticFindObject(JOKER_TABLE), StaticFindObject(TABLE_LIB)
+    if not valid(dt) or not valid(tableLib) then
+        diag[#diag + 1] = "joker table or table library MISSING"
+        return {}
+    end
+    local out, ids = {}, {}
+    local ok, err = pcall(function() tableLib:GetDataTableRowNames(dt, out) end)
+    if not ok then
+        diag[#diag + 1] = "joker row names error: " .. tostring(err)
+        return ids
+    end
+    for _, e in ipairs(out) do ids[#ids + 1] = unwrap(e) end
+    if #ids > 0 then jokerIds = ids end
+    return ids
+end
+
+local function jokerRow(key, pc)
+    local datas = StaticFindObject(PLAYER_DATAS)
+    if not valid(datas) then return nil end
+    local out = {}
+    if not pcall(function() datas:F_GetJokerData(key, pc, out) end) then return nil end
+    -- The name's case depends on which spelling the game registered first.
+    for k, v in pairs(out) do
+        if type(k) == "string" and k:lower() == "jokerdata" then return unwrap(v) end
+    end
+    return nil
+end
+
 local function readJokers(pc, pawn, ps, item)
     local gi = try(function() return ps.GameInstance end)
     if not valid(gi) then return jokerCache end
@@ -143,11 +185,11 @@ local function readJokers(pc, pawn, ps, item)
 
     local list, heal, shield = {}, 0, 0
     local callErr = nil
+    local ids = jokerRowNames(diag)
+    diag[#diag + 1] = "joker rows " .. #ids
     pcall(function()
-        gi.jokersDataTable:ForEach(function(k, v)
-            local key = k:get()
+        for _, key in ipairs(ids) do
             local id = str(key)
-            local row = v:get()
             local count = owned[id] or 0
             local equipped, value = false, nil
             if valid(lib) and itemName then
@@ -162,6 +204,7 @@ local function readJokers(pc, pawn, ps, item)
                 end
             end
             if equipped or count > 0 then
+                local row = jokerRow(key, pc)
                 local display = try(function() return row[JK.name]:ToString() end)
                 list[#list + 1] = {
                     id = id,
@@ -173,7 +216,7 @@ local function readJokers(pc, pawn, ps, item)
                 heal = heal + (num(try(function() return row[JK.heal] end)) or 0) * count
                 shield = shield + (num(try(function() return row[JK.shield] end)) or 0) * count
             end
-        end)
+        end
     end)
     table.sort(list, function(a, b) return a.name < b.name end)
     if callErr then diag[#diag + 1] = "F_GetJokerEffects error: " .. callErr end
