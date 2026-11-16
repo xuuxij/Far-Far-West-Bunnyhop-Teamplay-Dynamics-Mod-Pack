@@ -9,7 +9,8 @@ The pack was called FFWModpack up to 1.5.0; the installer upgrades that install 
 - **Damage meter**: live damage per second, total damage, kills and a graph on the left of the screen. F7 shows or hides it, F8 resets it.
 - **Stats panel**: your stats, your weapon's stats and what each Joker adds. F6 shows or hides it.
 - **Speedometer**: how fast you are moving, and your top speed.
-- **Auto dash**: hold the dash button and you dash again every time you land.
+- **Auto dash**: hold the dash button and you dash again every time you land, keeping the speed you landed with, so a chain keeps getting faster up to a top speed you set.
+- **Jetpack keeps speed**: fly in fast and the jetpack no longer drags you back down to its own speed.
 - **Muzzle flash off**: your own gun's flash no longer blocks your aim.
 - **Kill streaks**: call-outs at 10, 25, 50, 100 and 200 kills in a row.
 - **Clear zone at the crosshair**: objective markers, pings, icons and name tags fade inside an adjustable circle around the crosshair, so they stop covering what you aim at.
@@ -41,7 +42,7 @@ The host ticks "Allow mods" when creating the room. Made for Far Far West 0.3.0.
 
 - `src/Mods/DamageMeter` – DPS / total / peak / 30 s graph (F7 toggle, F8 reset)
 - `src/Mods/StatsPanel` – base vs current stats, weapon stats, active Jokers and what they add to this build (F6, Ctrl+F6 dumps raw values to UE4SS.log)
-- `src/Mods/Extras` – More Players panel (reads the MorePlayers mod's shared variables), speedometer, auto dash, muzzle flash switch, kill-streak call-outs, clear zone at the crosshair, teammate arrows, teammate-hit warning (glow, hit marker colour, sound), minigun spin sound volume, and the OPTIONS list in F9 edit mode (Ctrl+F5 dumps every part's state to UE4SS.log); one file per part
+- `src/Mods/Extras` – More Players panel (reads the MorePlayers mod's shared variables), speedometer, auto dash (with speed kept through landings), jetpack speed kept in flight, muzzle flash switch, kill-streak call-outs, clear zone at the crosshair, teammate arrows, teammate-hit warning (glow, hit marker colour, sound), minigun spin sound volume, and the OPTIONS list in F9 edit mode (Ctrl+F5 dumps every part's state to UE4SS.log); one file per part
 - `src/Mods/MorePlayers` – lobbies of up to 8: lobby cap on the host, player-count scaling continued past 4 (one hook on `F_GetCurveByNumberOfPlayers`), gold magnet table fix, name colours for players 5..8, status for the panel; `settings.txt` next to Scripts
 - `tools/morepak/` – builds `ZZZ_SveneySuperFriendsTogetherTime5000_P` (14 vanilla Blueprints with 18 byte patches: player-count Selects fall back to the 4-player value, 8 lobby rows) from the installed game with retoc; `patches.json` is the spec, `kismet.py` the bytecode disassembler used to derive and re-derive it, `uasset_json.py` the header reader that gives `kismet.py` its JSON (no UAssetGUI needed)
 - `src/Mods/shared/FFWUi` – shared UMG-in-code helpers (panels, tick boxes, a draggable slider, saved layout and settings); `asset()` must not be called from inside a `RegisterHook` callback, loading there freezes the game

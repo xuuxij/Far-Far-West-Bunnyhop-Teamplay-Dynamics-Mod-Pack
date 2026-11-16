@@ -16,7 +16,7 @@ do
     end
 
     at(28000, "create session", function()
-        FindFirstOf("BP_Manager_Multiplayer_C"):F_CreateNewSession(true, false, true)
+        FindFirstOf("BP_Manager_Multiplayer_C"):F_CreateNewSession(3, true, false, false) -- ENetworkType::LAN, private, no cheats, no crossplay (game 0.3.0.10)
         return "called"
     end)
     if PROBE_MISSION ~= false then
@@ -43,7 +43,7 @@ do
     local env = setmetatable({
         FFWUi = FFWUi, log = log, CONFIG = CONFIG, C = C, options = options, dump = dump, P = P,
         autodash = autodash, muzzle = muzzle, announcer = announcer, moreplayers = moreplayers, speedometer = speedometer,
-        spinsound = spinsound, friendlyfire = friendlyfire, clearzone = clearzone, teamarrows = teamarrows,
+        spinsound = spinsound, friendlyfire = friendlyfire, clearzone = clearzone, teamarrows = teamarrows, jetpack = jetpack,
         pc = function() return FFWUi.localController() end,
         pawn = function() return FFWUi.localController().Pawn end,
         action = function(name)

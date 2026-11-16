@@ -1,7 +1,9 @@
 -- Extras: the small things our group wanted, in one mod.
 --   More Players panel  what the More Players mod is doing right now
 --   Speedometer         your speed as a number and a car-style dial
---   Auto dash           hold the dash button and you dash again each time you land
+--   Auto dash           hold the dash button and you dash again each time you land,
+--                       keeping the speed you landed with (up to a top speed)
+--   Jetpack speed       flying the jetpack no longer slows you to its own speed
 --   Muzzle flash        can be switched off
 --   Kill streaks        MULTI KILL, MEGA KILL ... called out to the whole team
 --   Clear zone          markers, pings and icons fade inside a circle around
@@ -19,7 +21,7 @@
 --   Ctrl+F5             write what every part is doing to UE4SS.log
 -- Each part lives in its own file next to this one.
 
-local MOD_VERSION = "1.3.0"
+local MOD_VERSION = "1.4.0"
 
 local CONFIG = {
     REFRESH_MS = 16,         -- landing checks and the dial needle
@@ -56,6 +58,7 @@ local clearzone = require("clearzone")
 local teamarrows = require("teamarrows")
 local friendlyfire = require("friendlyfire")
 local spinsound = require("spinsound")
+local jetpack = require("jetpack")
 
 ---------------------------------------------------------------------------
 -- Options (edit mode only)
@@ -70,6 +73,10 @@ local OPTIONS = {
     { label = "Speedometer", hint = "your speed, as a dial and a number", panel = function() return speedometer.overlay end },
     { label = "More Players panel", hint = "lobby size and enemy scaling right now", panel = function() return moreplayers.overlay end },
     { key = "autodash", label = "Auto dash", hint = "keep dash held to dash again on every landing" },
+    { key = "autodashkeep", label = "Auto dash keeps speed", hint = "landing no longer slows the next dash: top speed",
+        slider = "autodashcap", default = 50, format = function(pct) return autodash.capText(pct) end,
+        changed = function() end },
+    { key = "jetkeep", label = "Jetpack keeps speed", hint = "fly in fast and the jetpack no longer slows you" },
     { key = "muzzle", label = "Muzzle flash", hint = "off: your own gun's flash no longer blocks your aim" },
     { key = "announcer", label = "Kill streaks", hint = "kills in a row: big text + sound, 25+ to team chat" },
     { key = "clearzone", label = "Clear zone at crosshair", hint = "markers fade inside the ring: drag for its size",
@@ -237,6 +244,20 @@ local ctx = {
     -- There is something to draw: in a game, or the dev preview.
     active = function(pc) return CONFIG.DEV_SHOW or FFWUi.inGame(pc) end,
     editing = function() return options:editing() end,
+    -- Writes X and Y of a vector property (Z stays); true when it reads back.
+    setXY = function(obj, prop, x, y)
+        local function done()
+            local ok, r = pcall(function()
+                local v = obj[prop]
+                return math.abs(v.X - x) < 0.5 and math.abs(v.Y - y) < 0.5
+            end)
+            return ok and r == true
+        end
+        pcall(function() local v = obj[prop]; v.X = x; v.Y = y end)
+        if done() then return true end
+        pcall(function() obj[prop] = { X = x, Y = y, Z = obj[prop].Z } end)
+        return done()
+    end,
 }
 
 moreplayers.init(ctx)
@@ -248,6 +269,7 @@ clearzone.init(ctx)
 teamarrows.init(ctx)
 friendlyfire.init(ctx)
 spinsound.init(ctx)
+jetpack.init(ctx)
 
 local slowTick -- forward: edit-mode clicks redraw straight away
 
@@ -308,6 +330,7 @@ function slowTick(pc, t)
     teamarrows.tick(pc, t, inGame)
     friendlyfire.tick(pc, t, inGame)
     spinsound.tick(pc, t)
+    jetpack.tick(pc, t, inGame)
     local ui = options:update(pc, ctx.active(pc))
     if ui then renderOptions(ui, pc) end
     if CONFIG.DEV_SHOW and t >= nextSample then -- dev: a sample announcement now and then
@@ -357,7 +380,7 @@ local function dump()
     for _, o in ipairs(OPTIONS) do
         log(string.format("  option %-20s %s", o.label, o.swatches and o.swatches[swatchIndex(o)].name or (optionOn(o) and "on" or "off")))
     end
-    for _, part in ipairs({ moreplayers, speedometer, autodash, muzzle, announcer, clearzone, teamarrows, friendlyfire, spinsound }) do
+    for _, part in ipairs({ moreplayers, speedometer, autodash, jetpack, muzzle, announcer, clearzone, teamarrows, friendlyfire, spinsound }) do
         local ok, err = pcall(part.dump)
         if not ok then log("  dump error: " .. tostring(err)) end
     end

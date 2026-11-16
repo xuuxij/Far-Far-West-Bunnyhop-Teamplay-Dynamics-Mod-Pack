@@ -24,6 +24,14 @@ WHAT'S IN IT
   - Speedometer: your speed as a dial and a number, with your top speed.
   - Auto dash: keep the dash button held and you dash again every time you
     land. You have to be moving, and the dash keeps its normal cooldown.
+    The speed you land with is kept: landing no longer brakes you down to
+    walking speed before the next dash, so a chain keeps getting faster, up
+    to a top speed you set on a slider in OPTIONS (3000 to start with, all
+    the way right for no limit). "Auto dash keeps speed" switches this off.
+  - Jetpack keeps speed: the jetpack used to slow anyone faster than its
+    own speed (1024) back down to it within half a second. Now it keeps the
+    speed you fly in with, never more. Steering is the same, and a hard
+    turn still costs speed.
   - Muzzle flash: can be switched off, so your own gun's flash stops
     blocking your aim. Only changes your own screen.
   - Kill streaks: MULTI KILL at 10 kills in a row (your screen only), then
@@ -54,9 +62,11 @@ WHAT'S IN IT
     of every minigun you hear, yours and your team's. Only changes your own
     sound; the gunfire itself stays as it is.
   - F9 = edit mode: frees the mouse so you can
-      * switch the speedometer, the More Players panel, auto dash, muzzle
-        flash, kill streaks and the teammate hit glow, marker and sound on
-        or off in the OPTIONS list
+      * switch the speedometer, the More Players panel, auto dash (and
+        its kept speed), the jetpack's kept speed, muzzle flash, kill
+        streaks and the teammate hit glow, marker and sound on or off in
+        the OPTIONS list
+      * drag the auto dash top speed slider
       * click a colour there for the teammate hit glow and marker
       * drag the Clear zone slider for the size of the circle, or untick
         its box to leave the markers alone
