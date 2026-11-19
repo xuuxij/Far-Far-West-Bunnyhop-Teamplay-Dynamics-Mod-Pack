@@ -15,13 +15,17 @@
 --                       you pick, your hit marker takes that colour and an
 --                       error sound plays
 --   Minigun spin sound  a volume slider and a mute box for the barrel whine
+--   Train ramp          (host) once the extraction train waits for the team,
+--                       enemies spawn 25% faster every step (30 s to 3 min,
+--                       picked from a dropdown), up to 4x; each step shows on
+--                       every screen as a big red "1.6x"
 --   F9                  edit mode (shared with the other panels): move and
 --                       resize the panels, and an OPTIONS list to switch each
 --                       of the above on or off
 --   Ctrl+F5             write what every part is doing to UE4SS.log
 -- Each part lives in its own file next to this one.
 
-local MOD_VERSION = "1.4.0"
+local MOD_VERSION = "1.5.0"
 
 local CONFIG = {
     REFRESH_MS = 16,         -- landing checks and the dial needle
@@ -59,6 +63,7 @@ local teamarrows = require("teamarrows")
 local friendlyfire = require("friendlyfire")
 local spinsound = require("spinsound")
 local jetpack = require("jetpack")
+local trainramp = require("trainramp")
 
 ---------------------------------------------------------------------------
 -- Options (edit mode only)
@@ -68,10 +73,15 @@ local jetpack = require("jetpack")
 -- it starts, 100 if not given; format: how its value is written, "70%" if not given).
 -- swatches: the row is a choice of colours ({ name, rgb } each), with no
 -- switch; the number of the picked one is kept under key.
+-- dropdown: the row also has a dropdown ({ key, label, choices = { { name } } });
+-- the number of the picked choice is kept under its key.
 -- changed runs (game thread) when the switch, the slider or the pick changes.
 local OPTIONS = {
     { label = "Speedometer", hint = "your speed, as a dial and a number", panel = function() return speedometer.overlay end },
     { label = "More Players panel", hint = "lobby size and enemy scaling right now", panel = function() return moreplayers.overlay end },
+    { key = "trainramp", label = "More enemies after the train", hint = "host only: spawns 25% faster every step, up to 4x",
+        dropdown = { key = "trainstep", label = "Faster every", choices = trainramp.STEP_CHOICES },
+        changed = function(pc) trainramp.changed(pc) end },
     { key = "autodash", label = "Auto dash", hint = "keep dash held to dash again on every landing" },
     { key = "autodashkeep", label = "Auto dash keeps speed", hint = "landing no longer slows the next dash: top speed",
         slider = "autodashcap", default = 50, format = function(pct) return autodash.capText(pct) end,
@@ -98,20 +108,22 @@ local OPTIONS = {
         slider = "spinvol", off = "MUTED", changed = function(pc) spinsound.changed(pc) end },
 }
 
-local OPT = { width = 400, pad = 16, top = 50, pitch = 44, slider = 28, swatchW = 30, swatchH = 18, swatchPitch = 37 }
+local OPT = { width = 400, pad = 16, top = 50, pitch = 44, slider = 28, swatchW = 30, swatchH = 18, swatchPitch = 37,
+    dropLabel = 104, dropW = 170, dropH = 24, itemH = 26 }
 
--- Top of every row; a row with a slider or swatches is taller.
+-- Top of every row; a row with a slider, swatches or a dropdown is taller.
 local function optionRows()
     local ys, y = {}, OPT.top
     for i, o in ipairs(OPTIONS) do
         ys[i] = y
-        y = y + OPT.pitch + ((o.slider or o.swatches) and OPT.slider or 0)
+        y = y + OPT.pitch + ((o.slider or o.swatches or o.dropdown) and OPT.slider or 0)
     end
     return ys, y + 6
 end
 
 local options -- overlay, made below
 local pendingChange = {} -- option key -> its switch was clicked (set on the input thread)
+local optionsUi = nil    -- the widgets last built, so an open dropdown can be closed with edit mode
 
 local function sliderPercent(o)
     local pct = tonumber(options:value(o.slider, o.default or 100)) or 100
@@ -124,13 +136,77 @@ local function swatchIndex(o)
     return 1
 end
 
+local function dropIndex(o)
+    local i = math.floor(tonumber(options:value(o.dropdown.key, 1)) or 1)
+    if o.dropdown.choices[i] then return i end
+    return 1
+end
+
+-- The closed dropdown: the picked choice in a box with a V on its right.
+local function buildDropButton(p, o, y)
+    local x, by = OPT.pad + 26, y + OPT.pitch - 1
+    FFWUi.setText(p:text(x, by + 2, 16, C.soft, { font = "text" }), o.dropdown.label)
+    local bx, bw, bh = x + OPT.dropLabel, OPT.dropW, OPT.dropH
+    local btn = {
+        frame = p:box(bx, by, bw, bh, C.dim),
+        fill = p:box(bx + 1, by + 1, bw - 2, bh - 2, { R = 0, G = 0, B = 0, A = 0.9 }),
+        value = p:text(bx + 8, by + 2, 16, C.text, { font = "text", width = bw - 34, height = bh - 2 }),
+        chevL = p:box(bx + bw - 19, by + 11, 8, 2, C.gold),
+        chevR = p:box(bx + bw - 14, by + 11, 8, 2, C.gold),
+    }
+    FFWUi.setPivot(btn.chevL, 0.5, 0.5)
+    FFWUi.setAngle(btn.chevL, 45)
+    FFWUi.setPivot(btn.chevR, 0.5, 0.5)
+    FFWUi.setAngle(btn.chevR, -45)
+    return { btn = btn, x = bx, y = by, w = bw, h = bh }
+end
+
+-- The open list, built after every row so it covers them. It opens upward:
+-- the rows above hold no sliders, and an engine slider under the list would
+-- take the click too. While it is open the only click zones are its choices,
+-- and a click anywhere else on the panel closes it.
+local function buildDropList(p, u, o, d)
+    local choices = o.dropdown.choices
+    local lh = #choices * OPT.itemH + 4
+    local lx, ly, lw = d.x, math.max(0, d.y - 2 - lh), d.w
+    d.list = {
+        p:box(lx - 1, ly - 1, lw + 2, lh + 2, C.gold),
+        p:box(lx, ly, lw, lh, { R = 0.02, G = 0.02, B = 0.02, A = 0.97 }),
+    }
+    d.marks, d.items, d.openZones = {}, {}, {}
+    for j, ch in ipairs(choices) do
+        local iy = ly + 2 + (j - 1) * OPT.itemH
+        d.marks[j] = p:box(lx + 2, iy, lw - 4, OPT.itemH, { R = 1, G = 0.499, B = 0, A = 0.22 })
+        d.items[j] = p:text(lx + 10, iy + 3, 16, C.text, { font = "text", width = lw - 20, height = OPT.itemH - 2 })
+        FFWUi.setText(d.items[j], ch.name)
+        d.openZones[j] = {
+            key = "pick:" .. o.dropdown.key .. ":" .. j, x = lx, y = iy, w = lw, h = OPT.itemH,
+            toggle = function()
+                options.cfg.values[o.dropdown.key] = j
+                options:_save()
+                u.dropOpen = nil
+                pendingChange[o.key] = true
+            end,
+        }
+    end
+    d.openZones[#d.openZones + 1] = {
+        key = "close:" .. o.dropdown.key, x = -10000, y = -10000, w = 20000, h = 20000,
+        toggle = function() u.dropOpen = nil end,
+    }
+    for _, w in ipairs(d.list) do FFWUi.setShown(w, false) end
+    for j in ipairs(choices) do
+        FFWUi.setShown(d.marks[j], false)
+        FFWUi.setShown(d.items[j], false)
+    end
+end
+
 local function optionOn(o)
     if o.panel then return o.panel().cfg.shown end
     return options:itemShown(o.key, true)
 end
 
 local function buildOptions(p)
-    local u = { panel = p, checks = {}, states = {}, sliders = {}, seen = {}, swatches = {} }
+    local u = { panel = p, checks = {}, states = {}, sliders = {}, seen = {}, swatches = {}, drops = {}, dropOpen = nil }
     local ys, h = optionRows()
     p:backdrop(OPT.width, h, 0.85, 0.5)
     FFWUi.setText(p:text(OPT.pad, 8, 28, C.gold), "OPTIONS")
@@ -185,8 +261,18 @@ local function buildOptions(p)
             -- The engine's slider takes these clicks: they must not pick the panel up.
             zones[#zones + 1] = { key = "slider:" .. o.slider, x = 0, y = sy - 4, w = OPT.width, h = OPT.slider, toggle = function() end }
         end
+        if o.dropdown then
+            local d = buildDropButton(p, o, y)
+            u.drops[i] = d
+            zones[#zones + 1] = {
+                key = "drop:" .. o.dropdown.key, x = 0, y = d.y - 1, w = OPT.width, h = d.h + 4,
+                toggle = function() u.dropOpen = (u.dropOpen ~= i) and i or nil end,
+            }
+        end
     end
+    for i, d in pairs(u.drops) do buildDropList(p, u, OPTIONS[i], d) end
     u.zones = zones
+    optionsUi = u
     return u
 end
 
@@ -222,6 +308,19 @@ local function renderOptions(ui, pc)
             if on then state = o.format and o.format(sliderPercent(o)) or (sliderPercent(o) .. "%") end
             FFWUi.setDim(ui.sliders[i], not on)
         end
+        local d = o.dropdown and ui.drops[i]
+        if d then
+            local picked = dropIndex(o)
+            FFWUi.setText(d.btn.value, o.dropdown.choices[picked].name)
+            for _, w in pairs(d.btn) do FFWUi.setDim(w, not on) end
+            local open = ui.dropOpen == i
+            for _, w in ipairs(d.list) do FFWUi.setShown(w, open) end
+            for j, t in ipairs(d.items) do
+                FFWUi.setShown(t, open)
+                FFWUi.setShown(d.marks[j], open and j == picked)
+                FFWUi.setTextColor(t, j == picked and C.gold or C.text)
+            end
+        end
         FFWUi.setText(ui.states[i], state)
         FFWUi.setTextColor(ui.states[i], stateColor)
         if pendingChange[o.key] then
@@ -229,7 +328,8 @@ local function renderOptions(ui, pc)
             o.changed(pc)
         end
     end
-    options:setToggles(ui.zones)
+    local open = ui.dropOpen and ui.drops[ui.dropOpen]
+    options:setToggles(open and open.openZones or ui.zones)
 end
 
 ---------------------------------------------------------------------------
@@ -270,6 +370,7 @@ teamarrows.init(ctx)
 friendlyfire.init(ctx)
 spinsound.init(ctx)
 jetpack.init(ctx)
+trainramp.init(ctx)
 
 local slowTick -- forward: edit-mode clicks redraw straight away
 
@@ -308,6 +409,8 @@ local function destroyUi()
     teamarrows.reset()
     spinsound.reset()
     friendlyfire.reset()
+    trainramp.destroy()
+    optionsUi = nil
 end
 
 FFWUi.beforeMapLoad(destroyUi)
@@ -331,6 +434,9 @@ function slowTick(pc, t)
     friendlyfire.tick(pc, t, inGame)
     spinsound.tick(pc, t)
     jetpack.tick(pc, t, inGame)
+    trainramp.tick(pc, t, inGame)
+    -- An open dropdown closes with edit mode.
+    if optionsUi and optionsUi.dropOpen and not options:editing() then optionsUi.dropOpen = nil end
     local ui = options:update(pc, ctx.active(pc))
     if ui then renderOptions(ui, pc) end
     if CONFIG.DEV_SHOW and t >= nextSample then -- dev: a sample announcement now and then
@@ -355,6 +461,7 @@ local function tick()
         clearzone.reset()
         teamarrows.reset()
         friendlyfire.reset()
+        trainramp.reset()
     end
     autodash.tick(pc, t, FFWUi.inGame(pc))
     speedometer.tick(pc, t)
@@ -362,6 +469,7 @@ local function tick()
     friendlyfire.fastTick(pc, t)
     clearzone.fastTick(pc, t)
     teamarrows.fastTick(pc, t)
+    trainramp.fastTick(pc, t)
     if options:editing() then -- the sliders follow the mouse on every frame
         local ui = options:update(pc, ctx.active(pc))
         if ui then pollSliders(ui, pc) end
@@ -378,9 +486,11 @@ end
 local function dump()
     log("---- extras dump v" .. MOD_VERSION .. " ----")
     for _, o in ipairs(OPTIONS) do
-        log(string.format("  option %-20s %s", o.label, o.swatches and o.swatches[swatchIndex(o)].name or (optionOn(o) and "on" or "off")))
+        local state = o.swatches and o.swatches[swatchIndex(o)].name or (optionOn(o) and "on" or "off")
+        if o.dropdown then state = state .. ", " .. o.dropdown.label:lower() .. " " .. o.dropdown.choices[dropIndex(o)].name end
+        log(string.format("  option %-20s %s", o.label, state))
     end
-    for _, part in ipairs({ moreplayers, speedometer, autodash, jetpack, muzzle, announcer, clearzone, teamarrows, friendlyfire, spinsound }) do
+    for _, part in ipairs({ moreplayers, speedometer, autodash, jetpack, muzzle, announcer, clearzone, teamarrows, friendlyfire, spinsound, trainramp }) do
         local ok, err = pcall(part.dump)
         if not ok then log("  dump error: " .. tostring(err)) end
     end

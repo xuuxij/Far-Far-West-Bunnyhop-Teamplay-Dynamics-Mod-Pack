@@ -17,6 +17,7 @@ The pack was called FFWModpack up to 1.5.0; the installer upgrades that install 
 - **Teammate arrows**: a teammate who is off your screen and more than 50 m away (adjustable) gets an arrow at the screen's edge pointing to them, with the distance under it. A circle of dots fills in around the arrow, one dot per 10 m, and from half full the arrow beats like a heart, harder the further they are, up to 1000 m.
 - **Teammate hit warning**: a teammate your shot lands on flashes in a colour you pick, your hit marker turns that colour and an error buzz plays.
 - **Minigun spin sound**: a volume slider and a mute box for the barrel whine of every minigun you hear.
+- **More enemies after the train**: once the extraction train has pulled in and waits for the team, enemies spawn 25% faster every step, up to 4x. The step is 30 s to 3 min, picked from a dropdown in F9 OPTIONS, and the host's switch and step are the ones that count. Each step flashes up on everyone's screen as a big red 1x, 1.25x, 1.6x ... that fades away.
 - **F9 edit mode**: move and resize the panels, switch any of the extras on or off.
 - **One installer**: everyone gets exactly the same files. Verify.bat shows a fingerprint that must match the host's. Update.bat gets the newest pack.
 
@@ -36,7 +37,7 @@ Newest pack: https://github.com/xuuxij/Sveney-Super-Friends-Together-Time-5000/r
 4. Double-click `Verify.bat`. It must say OK and show the same fingerprint as everyone else in the lobby.
 
 Later: `Update.bat` checks this page for a newer pack and installs it. `Uninstall.bat` removes the pack and puts back whatever the install moved aside.
-The host ticks "Allow mods" when creating the room. Made for Far Far West 0.3.0.10 - CL 2979; after a game update, wait for a new pack.
+The host ticks "Allow mods" when creating the room. Made for Far Far West Steam build 26708584 (CL 3041); after a game update, wait for a new pack.
 
 ## What is in the repo
 

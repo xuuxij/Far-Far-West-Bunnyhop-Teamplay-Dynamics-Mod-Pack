@@ -1,11 +1,11 @@
 {
   "name": "SveneySuperFriendsTogetherTime5000",
   "title": "Sveney Super Friends Together Time 5000",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "game": {
-    "productVersion": "0.3.0.10 - CL 2979",
+    "productVersion": "Steam build 26708584 (CL 3041)",
     "exeRelativePath": "FarFarWest/Binaries/Win64/FarFarWest-Win64-Shipping.exe",
-    "exeSha256": "07C476D198ED2D40BABB675E3FAEF68E9B2F3F6E7B8E125F2418A95E5262474A"
+    "exeSha256": "02B2E84C522882D480CD6F30333AC1975D2E08BB60298B15CE294964B250FB95"
   },
   "ue4ss": {
     "repository": "UE4SS-RE/RE-UE4SS",

@@ -9,12 +9,12 @@
     "The other one widens the lobby's player list from 4 to 8 rows. Everything else (lobby cap, enemy",
     "scaling, gold magnet, colours) is done at runtime by the MorePlayers Lua mod."
   ],
-  "game": "0.3.0.10 - CL 2979",
+  "game": "Steam build 26708584 (CL 3041)",
   "assets": [
     {
       "path": "FarFarWest/Content/Enemies/Structures/BP_Structre_Cryptic_Sigil",
-      "uexpSha256": "bc0b6159ca5bfe42f94e6ee8ba29e58b053206204fa8dd2cb7ab041618dc8d8f",
-      "uassetSha256": "b89c67b60e5860412b2373e76f16017db0798b0c20a5c50b0e1fa79c98236279",
+      "uexpSha256": "9971b976d9a19e96eff66150c9646307dd2359058488d1580060d7cd43e90c28",
+      "uassetSha256": "1f29b1ba2cf9373bc6447333870c7f046315a40c520cf2623ee854ce36a4931a",
       "patches": [
         {
           "offset": "0x2CD6",
